@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
 </head>
-<body>
-<h2>Login</h2>
-<input id="loginId" placeholder="Login ID / Email"><br><br>
-<input type="password" id="password" placeholder="Password"><br><br>
-<button onclick="login()">Login</button>
-<p id="msg"></p>
 
+<body>
+
+  <a href="login.html" class="login-btn">Login</a>
 
 </body>
 </html>
