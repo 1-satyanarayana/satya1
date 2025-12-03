@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CBT Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h2>Login</h2>
+<input id="loginId" placeholder="Login ID / Email"><br><br>
+<input type="password" id="password" placeholder="Password"><br><br>
+<button onclick="login()">Login</button>
+<p id="msg"></p>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+window.login = async function () {
+    const loginId = document.getElementById("loginId").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const msg = document.getElementById("msg");
+    msg.innerText = ""; // Clear previous messages
+
+    if (!loginId || !password) {
+        msg.innerText = "Please enter Login ID and Password!";
+        return;
+    }
+
+    const adminEmails = ["placement@satya.com", "placement@ravi.com"];
+
+    // ---------------- Admin Login ----------------
+    if (adminEmails.includes(loginId)) {
+        try {
+            console.log("Trying admin login:", loginId);
+
+            // Firebase Auth login
+            await signInWithEmailAndPassword(auth, loginId, password);
+
+            // Check Firestore role
+            const snap = await getDoc(doc(db, "users", loginId));
+            if (!snap.exists()) {
+                msg.innerText = "Admin user not found in Firestore!";
+                return;
+            }
+
+            const data = snap.data();
+            if (data.role !== "admin") {
+                msg.innerText = "Access Denied! Not an admin.";
+                return;
+            }
+
+            // Save session and redirect
+            localStorage.setItem("adminName", data.name || "Admin");
+            localStorage.setItem("adminEmail", loginId);
+            window.location.href = "admin-dashboard.html";
+            return;
+
+        } catch (error) {
+            console.error("Admin login error:", error);
+            msg.innerText = "Admin Login Failed! Check credentials.";
+            return;
+        }
+    }
+
+    // ---------------- Student Login ----------------
+    try {
+        const snap = await getDoc(doc(db, "users", loginId));
+        if (!snap.exists()) {
+            msg.innerText = "Invalid Login ID!";
+            return;
+        }
+
+        const data = snap.data();
+        if (data.password !== password) {
+            msg.innerText = "Wrong Password!";
+            return;
+        }
+
+        // Save session and redirect
+        localStorage.setItem("studentName", data.name);
+        localStorage.setItem("roll", data.roll);
+        localStorage.setItem("loginId", data.loginId);
+        window.location.href = "student-dashboard.html";
+
+    } catch (err) {
+        console.error("Student login error:", err);
+        msg.innerText = "Login Failed! Try again.";
+    }
+};
+</script>
+</body>
+</html>

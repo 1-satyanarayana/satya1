@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #examContainer { display: none; }
+        .question { margin-bottom: 15px; }
+        button { padding: 8px 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Welcome, <span id="stuName"></span> (Roll: <span id="stuRoll"></span>)</h2>
+<button onclick="logoutStudent()">Logout</button>
+<hr>
+
+<h3>Available Tests</h3>
+
+<button onclick="startExam('daily')">Daily Online Test (25Q | 25min)</button>
+<button onclick="startExam('mock')">Mock Test (TCS | 60Q | 50min)</button>
+
+<hr>
+
+<div id="examContainer">
+    <h3 id="examTitle"></h3>
+    <p>Time Remaining: <span id="timer">00:00</span></p>
+    <form id="examForm"></form>
+    <button onclick="submitExam()">Submit Exam</button>
+</div>
+
+<p id="msg"></p>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+// Load student info
+const stuName = localStorage.getItem("studentName");
+const stuRoll = localStorage.getItem("roll");
+const loginId = localStorage.getItem("loginId");
+
+if (!stuName || !stuRoll || !loginId) {
+    alert("Please login first!");
+    window.location.href = "login.html";
+}
+
+document.getElementById("stuName").innerText = stuName;
+document.getElementById("stuRoll").innerText = stuRoll;
+
+// ----------------- Logout -----------------
+function logoutStudent() {
+    localStorage.clear();
+    window.location.href = "login.html";
+}
+
+// ----------------- Exam Logic -----------------
+let currentQuestions = [];
+let timerInterval;
+let remainingTime;
+
+window.startExam = async function(type) {
+    document.getElementById("examContainer").style.display = "block";
+    document.getElementById("examForm").innerHTML = "";
+    document.getElementById("msg").innerText = "";
+
+    let questionCount = type === "daily" ? 25 : 60;
+    remainingTime = type === "daily" ? 25*60 : 50*60; // seconds
+
+    document.getElementById("examTitle").innerText = type === "daily" ? "Daily Online Test" : "Mock Test";
+
+    // Fetch questions
+    const snap = await getDocs(collection(db, "questions"));
+    let allQuestions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Shuffle questions
+    allQuestions = allQuestions.sort(() => 0.5 - Math.random());
+    currentQuestions = allQuestions.slice(0, questionCount);
+
+    // Shuffle options for each question
+    currentQuestions.forEach(q => {
+        q.shuffledOptions = q.options
+            .map((option, i) => ({ option, index: i+1 }))
+            .sort(() => 0.5 - Math.random());
+    });
+
+    renderQuestions();
+    startTimer();
+}
+
+function renderQuestions() {
+    const form = document.getElementById("examForm");
+    form.innerHTML = "";
+    currentQuestions.forEach((q, idx) => {
+        const div = document.createElement("div");
+        div.className = "question";
+        div.innerHTML = `<b>Q${idx+1}:</b> ${q.question}<br>`;
+        q.shuffledOptions.forEach(opt => {
+            div.innerHTML += `<input type="radio" name="q${idx}" value="${opt.index}"> ${opt.option}<br>`;
+        });
+        form.appendChild(div);
+    });
+}
+
+// ----------------- Timer -----------------
+function startTimer() {
+    updateTimer();
+    timerInterval = setInterval(() => {
+        remainingTime--;
+        if (remainingTime <= 0) {
+            clearInterval(timerInterval);
+            submitExam();
+        }
+        updateTimer();
+    }, 1000);
+}
+
+function updateTimer() {
+    const min = Math.floor(remainingTime / 60);
+    const sec = remainingTime % 60;
+    document.getElementById("timer").innerText = `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+}
+
+// ----------------- Submit Exam -----------------
+window.submitExam = async function() {
+    clearInterval(timerInterval);
+
+    let score = 0;
+    currentQuestions.forEach((q, idx) => {
+        const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+        if (selected && parseInt(selected.value) === q.correct) score++;
+    });
+
+    // Store result in Firestore
+    await addDoc(collection(db, "results"), {
+        studentName: stuName,
+        roll: stuRoll,
+        loginId: loginId,
+        testType: document.getElementById("examTitle").innerText,
+        score,
+        total: currentQuestions.length,
+        timestamp: new Date()
+    });
+
+    document.getElementById("msg").innerText = `Exam submitted! Your Score: ${score} / ${currentQuestions.length}`;
+    document.getElementById("examContainer").style.display = "none";
+}
+
+</script>
+</body>
+</html>

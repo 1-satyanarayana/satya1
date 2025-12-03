@@ -1,0 +1,105 @@
+/* ===== Global Styles ===== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    margin: 0;
+    padding: 0 20px;
+    color: #333;
+}
+
+h2, h3 {
+    color: #222;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* ===== Inputs ===== */
+input, textarea, select {
+    padding: 8px;
+    width: 100%;
+    max-width: 400px;
+    margin: 5px 0 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* ===== Form Labels ===== */
+label {
+    font-weight: bold;
+}
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: #fff;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* ===== Exam Container ===== */
+#examContainer {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 20px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+.question {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-left: 4px solid #007bff;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+/* ===== Timer ===== */
+#timer {
+    font-weight: bold;
+    color: #d9534f;
+}
+
+/* ===== Messages ===== */
+#msg {
+    margin-top: 15px;
+    font-weight: bold;
+    color: green;
+}
+
+/* ===== Responsive ===== */
+@media screen and (max-width: 600px) {
+    input, textarea, select, button {
+        width: 100%;
+    }
+}

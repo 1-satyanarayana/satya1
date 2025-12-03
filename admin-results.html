@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Student Results</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 6px;
+        }
+        th { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<h2>Student Results</h2>
+<button onclick="logoutAdmin()">Logout</button>
+<hr>
+
+<label>Filter by Test Type:</label>
+<select id="testTypeFilter" onchange="loadResults()">
+    <option value="all">All</option>
+    <option value="Daily Online Test">Daily Online Test</option>
+    <option value="Mock Test">Mock Test</option>
+</select>
+
+<h3>Results Table</h3>
+<table>
+    <thead>
+        <tr>
+            <th onclick="sortTable(0)">Student Name</th>
+            <th onclick="sortTable(1)">Roll Number</th>
+            <th onclick="sortTable(2)">Login ID</th>
+            <th onclick="sortTable(3)">Test Type</th>
+            <th onclick="sortTable(4)">Score</th>
+            <th onclick="sortTable(5)">Total</th>
+            <th onclick="sortTable(6)">Timestamp</th>
+        </tr>
+    </thead>
+    <tbody id="resultsTable"></tbody>
+</table>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+// Admin authentication check
+const adminName = localStorage.getItem("adminName");
+const adminEmail = localStorage.getItem("adminEmail");
+if (!adminName || !adminEmail) {
+    alert("Please login as admin to access this page!");
+    window.location.href = "login.html";
+}
+
+function logoutAdmin() {
+    localStorage.removeItem("adminName");
+    localStorage.removeItem("adminEmail");
+    window.location.href = "login.html";
+}
+
+// Load results from Firestore
+async function loadResults() {
+    const tbody = document.getElementById("resultsTable");
+    tbody.innerHTML = "";
+
+    const filter = document.getElementById("testTypeFilter").value;
+    const snap = await getDocs(collection(db, "results"));
+    const results = snap.docs.map(doc => doc.data());
+
+    results
+        .filter(r => filter === "all" || r.testType === filter)
+        .forEach(r => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${r.studentName}</td>
+                <td>${r.roll}</td>
+                <td>${r.loginId}</td>
+                <td>${r.testType}</td>
+                <td>${r.score}</td>
+                <td>${r.total}</td>
+                <td>${new Date(r.timestamp.seconds * 1000).toLocaleString()}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+}
+
+loadResults();
+
+// Optional: Sort table by column
+function sortTable(n) {
+    const table = document.querySelector("table");
+    let switching = true;
+    let dir = "asc";
+
+    while (switching) {
+        switching = false;
+        const rows = table.rows;
+        for (let i = 1; i < rows.length - 1; i++) {
+            let shouldSwitch = false;
+            let x = rows[i].getElementsByTagName("TD")[n];
+            let y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir === "asc" && x.innerText.toLowerCase() > y.innerText.toLowerCase()) shouldSwitch = true;
+            if (dir === "desc" && x.innerText.toLowerCase() < y.innerText.toLowerCase()) shouldSwitch = true;
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+        if (!switching && dir === "asc") dir = "desc", switching = true;
+    }
+}
+
+</script>
+
+</body>
+</html>
